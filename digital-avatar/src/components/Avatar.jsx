@@ -27,13 +27,15 @@ export function Avatar(props) {
     const audio = new Audio(message.audio);
     audio.play();
     setAudio(audio);
-    audio.onended = onMessagePlayed;
+    audio.onended = () => {
+      setAnimation("Idle"); 
+    };
   }, [message]);
-
 
   const group = useRef();
   const { actions, mixer } = useAnimations(animations, group);
   const [animation, setAnimation] = useState(animations.find((a) => a.name === "Idle") ? "Idle" : animations[0].name);
+
   useEffect(() => {
     if (actions[animation]) {
       actions[animation]
@@ -69,7 +71,7 @@ export function Avatar(props) {
       morphTargets.forEach((key) => {
         const mapping = facialExpressions[facialExpression];
         if (key === "eyeBlinkLeft" || key === "eyeBlinkRight") {
-          return; // eyes wink/blink are handled separately
+          return; 
         }
         if (mapping && mapping[key]) {
           lerpMorphTarget(key, mapping[key], 0.1);
@@ -208,14 +210,9 @@ export function Avatar(props) {
         morphTargetInfluences={nodes.Wolf3D_Teeth.morphTargetInfluences}
       />
       <skinnedMesh
-        geometry={nodes.Wolf3D_Glasses.geometry}
-        material={materials.Wolf3D_Glasses}
-        skeleton={nodes.Wolf3D_Glasses.skeleton}
-      />
-      <skinnedMesh
-        geometry={nodes.Wolf3D_Headwear.geometry}
-        material={materials.Wolf3D_Headwear}
-        skeleton={nodes.Wolf3D_Headwear.skeleton}
+        geometry={nodes.Wolf3D_Hair.geometry}
+        material={materials.Wolf3D_Hair}
+        skeleton={nodes.Wolf3D_Hair.skeleton}
       />
       <skinnedMesh
         geometry={nodes.Wolf3D_Body.geometry}

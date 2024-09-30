@@ -48,7 +48,7 @@ def generate_lip_sync():
         data = request.json
         text = data.get("text")
         facial_expression = "neutral" #Choose from: smile, sad, angry, surprised, funnyFace, and default"
-        animation = "Talking-1" #Choose from: Idle, TalkingOne, TalkingThree, SadIdle, Defeated, Angry, Surprised, DismissingGesture, and ThoughtfulHeadShake.
+        animation = "TalkingOne" #Choose from: Idle, TalkingOne, TalkingThree, SadIdle, Defeated, Angry, Surprised, DismissingGesture, and ThoughtfulHeadShake.
 
         if not text:
             return jsonify({"error": "No text provided"}), 400

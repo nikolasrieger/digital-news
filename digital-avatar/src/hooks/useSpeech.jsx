@@ -52,7 +52,7 @@ export const SpeechProvider = ({ children }) => {
 
   useEffect(() => {
     sendAudioData();
-  }, []); // Only run once on mount
+  }, []); 
 
   useEffect(() => {
     if (messages.length > 0) {

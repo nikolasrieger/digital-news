@@ -15,13 +15,12 @@ export function Avatar(props) {
   const { message } = useSpeech();
   const [lipsync, setLipsync] = useState();
   const [setupMode, setSetupMode] = useState(false);
-  const audioQueue = useRef([]); // Queue for audio messages
+  const audioQueue = useRef([]);
   const [currentAudio, setCurrentAudio] = useState(null);
 
-  // Function to play the next audio in the queue
   const playNextAudio = () => {
     if (audioQueue.current.length > 0) {
-      const nextMessage = audioQueue.current.shift(); // Get the next message
+      const nextMessage = audioQueue.current.shift(); 
       const audio = new Audio(nextMessage.audio);
       setCurrentAudio(audio);
 
@@ -30,11 +29,10 @@ export function Avatar(props) {
       });
 
       audio.onended = () => {
-        setAnimation("Idle"); // Reset animation when audio ends
-        playNextAudio(); // Play next audio in the queue
+        setAnimation("Idle"); 
+        playNextAudio();
       };
 
-      // Set animation and lipsync here
       setAnimation(nextMessage.animation);
       setFacialExpression(nextMessage.facialExpression);
       setLipsync(nextMessage.lipsync);
@@ -43,10 +41,10 @@ export function Avatar(props) {
 
   useEffect(() => {
     if (message) {
-      audioQueue.current.push(message); // Add the new message to the queue
+      audioQueue.current.push(message); 
 
       if (!currentAudio) {
-        playNextAudio(); // Play if no audio is currently playing
+        playNextAudio(); 
       }
     }
   }, [message]);
@@ -83,7 +81,6 @@ export function Avatar(props) {
 
   const [blink, setBlink] = useState(false);
   const [facialExpression, setFacialExpression] = useState("");
-  const [audio, setAudio] = useState();
 
   useFrame(() => {
     !setupMode &&

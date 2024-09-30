@@ -1,7 +1,5 @@
 node_modules
 .venv
 lib
-*.mp3
-*.wav
 .env
 __pycache__

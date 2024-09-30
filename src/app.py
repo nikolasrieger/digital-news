@@ -1,43 +1,45 @@
-import os
-import subprocess
+from os import path, remove, getenv
+from subprocess import run, DEVNULL
 from gtts import gTTS
 from flask import Flask, jsonify, Response
 from flask_cors import CORS
-import base64
-import json
-import time
+from json import loads, dumps, load
+from base64 import b64encode
+from time import sleep
 from model import Model
 from dotenv import load_dotenv
-from os import getenv
 
 app = Flask(__name__)
 CORS(app)
 
+
 class LipSync:
     def __convert_text_to_audio(self, sentence, audio_file: str):
-        tts = gTTS(sentence, tld='co.uk', lang='en')
+        tts = gTTS(sentence, tld="co.uk", lang="en")
         tts.save(audio_file)
 
     def __generate_lip_sync(self, audio_file: str, output_file: str):
-        ffmpeg_path = os.path.abspath("./lib/ffmpeg/bin/ffmpeg")
-        rhubarb_path = os.path.abspath("./lib/rhubarb-lip-sync/rhubarb")
+        ffmpeg_path = path.abspath("./lib/ffmpeg/bin/ffmpeg")
+        rhubarb_path = path.abspath("./lib/rhubarb-lip-sync/rhubarb")
 
         command = f'"{ffmpeg_path}" -y -i {audio_file} audio.wav'
-        subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        run(command, shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
 
         command = f'"{rhubarb_path}" -f json -o {output_file} audio.wav -r phonetic'
-        subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        run(command, shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
 
-    def run_lip_sync(self, sentence, audio_file: str = "audio.mp3", output_file: str = "output.json"):
+    def run_lip_sync(
+        self, sentence, audio_file: str = "audio.mp3", output_file: str = "output.json"
+    ):
         self.__convert_text_to_audio(sentence, audio_file)
         self.__generate_lip_sync(audio_file, output_file)
 
-        with open(output_file, 'r') as f:
-            lipsync_data = json.load(f)
-        
+        with open(output_file, "r") as f:
+            lipsync_data = load(f)
+
         with open(audio_file, "rb") as audio_file:
-            audio_base64 = base64.b64encode(audio_file.read()).decode('utf-8')
-        
+            audio_base64 = b64encode(audio_file.read()).decode("utf-8")
+
         return audio_base64, lipsync_data
 
 
@@ -50,15 +52,19 @@ def generate_lip_sync():
 
         text = model.generate_summary(text)
 
-        sentences = [sentence.strip() for sentence in text.split(".") if sentence.strip()]
+        sentences = [
+            sentence.strip() for sentence in text.split(".") if sentence.strip()
+        ]
 
         def generate_lip_sync_stream():
             ticker = 0
             lipsync_generator = LipSync()
 
             for sentence in sentences:
-                audio_base64, lipsync_data = lipsync_generator.run_lip_sync(sentence + ".")
-                expr = json.loads(model.generate_expression(sentence))
+                audio_base64, lipsync_data = lipsync_generator.run_lip_sync(
+                    sentence + "."
+                )
+                expr = loads(model.generate_expression(sentence))
                 animation = expr["animation"]
                 facial_expression = expr["facialExpression"]
                 ticker = 1 - ticker
@@ -71,10 +77,13 @@ def generate_lip_sync():
                     "lipsync": lipsync_data,
                 }
 
-                yield f"data: {json.dumps(response)}\n\n"
-                time.sleep(1) 
+                yield f"data: {dumps(response)}\n\n"
+                remove("audio.mp3")
+                remove("audio.wav")
+                remove("output.json")
+                sleep(1)
 
-        return Response(generate_lip_sync_stream(), mimetype='text/event-stream')
+        return Response(generate_lip_sync_stream(), mimetype="text/event-stream")
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

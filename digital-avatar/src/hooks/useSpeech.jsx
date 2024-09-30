@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 
 const SpeechContext = createContext();
 
@@ -6,39 +6,44 @@ export const SpeechProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState();
+  const initialized = useRef(false);
 
-  const sendAudioData = async (text) => {
+  const sendAudioData = async () => {
     try {
-      setLoading(true);
+      if (initialized.current) return; 
 
-      const response = await fetch("http://localhost:5000/generate_lip_sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text, 
-        }),
+      setLoading(true);
+      initialized.current = true; 
+
+      const eventSource = new EventSource("http://localhost:5000/generate_lip_sync");
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            text: data.text,
+            facialExpression: data.facialExpression,
+            animation: data.animation,
+            audio: data.audio,
+            lipsync: data.lipsync,
+          },
+        ]);
+      };
+
+      eventSource.onerror = (err) => {
+        console.error("EventSource failed:", err);
+        eventSource.close();
+        setLoading(false);
+      };
+
+      eventSource.addEventListener('open', () => {
+        setLoading(false);
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
+      return () => eventSource.close(); 
 
-      const data = await response.json();
-
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          text: data.text,
-          facialExpression: data.facialExpression,
-          animation: data.animation,
-          audio: data.audio, 
-          lipsync: data.lipsync, 
-        },
-      ]);
-
-      setLoading(false);
     } catch (error) {
       console.error("Failed to fetch lip sync data:", error);
       setLoading(false);
@@ -46,12 +51,12 @@ export const SpeechProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    sendAudioData("This is a test message.");
-  }, []);
+    sendAudioData();
+  }, []); // Only run once on mount
 
   useEffect(() => {
     if (messages.length > 0) {
-      setMessage(messages[0]);
+      setMessage(messages[messages.length - 1]);
     } else {
       setMessage(null);
     }

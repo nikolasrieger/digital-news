@@ -12,24 +12,43 @@ import morphTargets from "../constants/morphTargets";
 export function Avatar(props) {
   const { nodes, materials, scene } = useGLTF("/models/avatar.glb");
   const { animations } = useGLTF("/models/animations.glb");
-  const { message, onMessagePlayed } = useSpeech();
+  const { message } = useSpeech();
   const [lipsync, setLipsync] = useState();
   const [setupMode, setSetupMode] = useState(false);
+  const audioQueue = useRef([]); // Queue for audio messages
+  const [currentAudio, setCurrentAudio] = useState(null);
+
+  // Function to play the next audio in the queue
+  const playNextAudio = () => {
+    if (audioQueue.current.length > 0) {
+      const nextMessage = audioQueue.current.shift(); // Get the next message
+      const audio = new Audio(nextMessage.audio);
+      setCurrentAudio(audio);
+
+      audio.play().catch((error) => {
+        console.error("Error playing audio:", error);
+      });
+
+      audio.onended = () => {
+        setAnimation("Idle"); // Reset animation when audio ends
+        playNextAudio(); // Play next audio in the queue
+      };
+
+      // Set animation and lipsync here
+      setAnimation(nextMessage.animation);
+      setFacialExpression(nextMessage.facialExpression);
+      setLipsync(nextMessage.lipsync);
+    }
+  };
 
   useEffect(() => {
-    if (!message) {
-      setAnimation("Idle");
-      return;
+    if (message) {
+      audioQueue.current.push(message); // Add the new message to the queue
+
+      if (!currentAudio) {
+        playNextAudio(); // Play if no audio is currently playing
+      }
     }
-    setAnimation(message.animation);
-    setFacialExpression(message.facialExpression);
-    setLipsync(message.lipsync);
-    const audio = new Audio(message.audio);
-    audio.play();
-    setAudio(audio);
-    audio.onended = () => {
-      setAnimation("Idle"); 
-    };
   }, [message]);
 
   const group = useRef();
@@ -89,7 +108,7 @@ export function Avatar(props) {
 
     const appliedMorphTargets = [];
     if (message && lipsync) {
-      const currentAudioTime = audio.currentTime;
+      const currentAudioTime = currentAudio ? currentAudio.currentTime : 0;
       for (let i = 0; i < lipsync.mouthCues.length; i++) {
         const mouthCue = lipsync.mouthCues[i];
         if (currentAudioTime >= mouthCue.start && currentAudioTime <= mouthCue.end) {

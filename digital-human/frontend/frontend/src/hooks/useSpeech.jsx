@@ -7,45 +7,46 @@ export const SpeechProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState();
 
-  const sendAudioData = async () => {
-    const audioFileToBase64 = async ({ fileName }) => {
-      console.log(`public/audio.wav`);
-      const response = await fetch(`${process.env.PUBLIC_URL}/${fileName}`);
-      const blob = await response.blob();
-      const reader = new FileReader();
+  const sendAudioData = async (text) => {
+    try {
+      setLoading(true);
 
-      return new Promise((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64data = reader.result.split(",")[1];
-          resolve(base64data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+      const response = await fetch("http://localhost:5000/generate_lip_sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text, 
+        }),
       });
-    };
 
-    let audio = await audioFileToBase64("audio.mp3");
-    const readJsonTranscript = async ({ fileName }) => {
-      const response = await fetch(`${process.env.PUBLIC_URL}/${fileName}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
       const data = await response.json();
-      return data;
-    };
-    
-    let lipsync = await readJsonTranscript({ fileName: `output.json` });
 
-    // Example simulated response (you can modify this based on your needs)
-    const simulatedResponse = [
-      { text: "This is a test message.", facialExpression: "smile", animation: "Talking-1", audio, lipsync },
-      { text: "This is another message.", facialExpression: "default", animation: "Talking-2", audio, lipsync },
-    ];
-    
-    setLoading(true);
-    setMessages((prevMessages) => [...prevMessages, ...simulatedResponse]);
-    setLoading(false);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          text: data.text,
+          facialExpression: data.facialExpression,
+          animation: data.animation,
+          audio: data.audio, 
+          lipsync: data.lipsync, 
+        },
+      ]);
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Failed to fetch lip sync data:", error);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    sendAudioData(); // Call this function to initially load audio and transcripts
+    sendAudioData("This is a test message.");
   }, []);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export const SpeechProvider = ({ children }) => {
       value={{
         message,
         loading,
-        setMessages, // Expose setMessages for adding new messages
+        sendAudioData,
       }}
     >
       {children}

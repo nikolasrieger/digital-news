@@ -23,21 +23,42 @@ export function Avatar(props) {
       const nextMessage = audioQueue.current.shift(); 
       const audio = new Audio(nextMessage.audio);
       setCurrentAudio(audio);
-
+  
       audio.play().catch((error) => {
         console.error("Error playing audio:", error);
       });
-
+  
+      audio.onloadedmetadata = () => {
+        const audioDuration = audio.duration;
+        const animationDuration = actions[nextMessage.animation]?.getClip()?.duration || 0;
+        const randomStartTime = THREE.MathUtils.randFloat(0, Math.max(0, audioDuration - animationDuration));
+  
+        setTimeout(() => {
+          setAnimation(nextMessage.animation); 
+          setFacialExpression(nextMessage.facialExpression);
+          setLipsync(nextMessage.lipsync);
+  
+          if (actions[nextMessage.animation]) {
+            actions[nextMessage.animation].setLoop(THREE.LoopOnce, 1);
+            actions[nextMessage.animation].reset().play();
+            actions[nextMessage.animation].clampWhenFinished = true;
+            actions[nextMessage.animation].timeScale = 1;
+  
+            mixer.addEventListener('finished', (e) => {
+              if (e.action === actions[nextMessage.animation]) {
+                setAnimation("Idle"); 
+              }
+            });
+          }
+        }, randomStartTime * 1000);
+      };
+  
       audio.onended = () => {
         setAnimation("Idle"); 
         playNextAudio();
       };
-
-      setAnimation(nextMessage.animation);
-      setFacialExpression(nextMessage.facialExpression);
-      setLipsync(nextMessage.lipsync);
     }
-  };
+  };  
 
   useEffect(() => {
     if (message) {

@@ -6,10 +6,10 @@ Welcome to the **NewsReader** GitHub repository! This project creates a digital 
 
 ## 🌟 Features
 
-- 📰 **Custom News Feeds**: The avatar reads news from sources of your choice, including web scraping or custom uploaded articles.
+- 📰 **Custom News Feeds**: The avatar reads news from sources of your choice, including web scraping or custom articles. You only need an URL.
 - 🧑‍🎤 **Avatar Customization**: Users can choose or design their own avatars to personalize the reading experience.
 - 🌐 **Multi-Language Support**: The avatar can speak and read the news in multiple languages, allowing global news delivery.
-- 🎨 **Interactive UI**: A visually appealing interface that shows the avatar, alongside live text of the news being read.
+- 🎨 **Interactive UI**: A visually appealing interface that shows the virtual avatar like the classical news on TV.
 
 ## 🚀 Getting Started
 
@@ -19,6 +19,20 @@ Before you start, ensure you have the following:
 
 - 🐍 **Python 3.x**: Required for running the core logic and avatar system.
 - 📦 **Dependencies**: Install the required libraries from the `requirements.txt`, as well as ffmpeg and rhubarb-lip-sync.
+
+### Installation
+
+For the **frontend**:
+1. Install **Node.js** and **npm**.
+2. Run `npm install` to set up the frontend dependencies.
+3. Start the frontend via `npm start`.
+
+For the **backend**:
+1. Set up the virtual environment by running `python -m venv .venv`.
+2. Activate the virtual environment:
+   - On **Windows**: `.\.venv\Scripts\activate`
+   - On **Linux**: `source .venv/bin/activate`
+3. Run the backend with `python app.py`.
 
 ## 📜 Credits
 

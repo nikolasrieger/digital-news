@@ -1,13 +1,14 @@
 from os import path, remove, getenv
 from subprocess import run, DEVNULL
 from gtts import gTTS
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, request
 from flask_cors import CORS
-from json import loads, dumps, load
+from json import load, dumps, loads
 from base64 import b64encode
 from time import sleep
 from model import Model
 from dotenv import load_dotenv
+from requests import get
 
 app = Flask(__name__)
 CORS(app)
@@ -41,32 +42,38 @@ class LipSync:
             audio_base64 = b64encode(audio_file.read()).decode("utf-8")
 
         return audio_base64, lipsync_data
-
+    
 
 @app.route("/generate_lip_sync", methods=["GET"])
 def generate_lip_sync():
-    try:
-        text = """Switzerland and Italy have redrawn part of their border in the Alps due to melting glaciers, caused by climate change.
-            Part of the area affected will be beneath the Matterhorn, one of Europe's tallest mountains, and close to a number of popular ski resorts.
-            Large sections of the Swiss-Italian border are determined by glacier ridgelines or areas of perpetual snow, but melting glaciers have caused these natural boundaries to shift, leading to both countries seeking to rectify the border."""
+    #try:
+    if True:
+        url = request.args.get("url")
 
+        if not url:
+            return jsonify({"error": "URL parameter is required"}), 400
+
+        response = get(url)
+
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch the content from the URL"}), 400
+
+        text = response.text
         text = model.generate_summary(text)
 
-        sentences = [
-            sentence.strip() for sentence in text.split(".") if sentence.strip()
-        ]
+        sentences = [sentence.strip() for sentence in text.split(".") if sentence.strip()]
 
         def generate_lip_sync_stream():
             ticker = 0
             lipsync_generator = LipSync()
 
             for sentence in sentences:
-                audio_base64, lipsync_data = lipsync_generator.run_lip_sync(
-                    sentence + "."
-                )
+                audio_base64, lipsync_data = lipsync_generator.run_lip_sync(sentence + ".")
+                
                 expr = loads(model.generate_expression(sentence))
                 animation = expr["animation"]
                 facial_expression = expr["facialExpression"]
+                
                 ticker = 1 - ticker
 
                 response = {
@@ -76,8 +83,8 @@ def generate_lip_sync():
                     "audio": f"data:audio/mp3;base64,{audio_base64}",
                     "lipsync": lipsync_data,
                 }
-
                 yield f"data: {dumps(response)}\n\n"
+
                 remove("audio.mp3")
                 remove("audio.wav")
                 remove("output.json")
@@ -85,8 +92,9 @@ def generate_lip_sync():
 
         return Response(generate_lip_sync_stream(), mimetype="text/event-stream")
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    #except Exception as e:
+    #    return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ Welcome to the **NewsReader** GitHub repository! This project creates a digital 
 
 ## 🌟 Features
 
-- 📰 **Custom News Feeds**: The avatar reads news from sources of your choice, including web scraping or custom articles. You only need an URL.
+- 📰 **Custom News Feeds**: The avatar reads news from sources of your choice - you only need an URL.
 - 🧑‍🎤 **Avatar Customization**: Users can choose or design their own avatars to personalize the reading experience.
 - 🌐 **Multi-Language Support**: The avatar can speak and read the news in multiple languages, allowing global news delivery.
 - 🎨 **Interactive UI**: A visually appealing interface that shows the virtual avatar like the classical news on TV.
